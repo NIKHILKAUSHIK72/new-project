@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMBA LAMINATES</title>
+    <link rel="icon" href="images.jpg"  type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        
+        <!-- Sidebar Section -->
+        <div class="sidebar">
+            <h2>AMBA LAMINATES DEPO'S PVT LTD.<BR><BR>( ALL SHEETS)</h2>
+            <ul>
+                <li><a href="#">SHEETS</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Dashboard Section -->
+        <div class="dashboard">
+            <h1 style="text-align: center;">AMBA LAMINATES DEPO'S PVT LTD. </h1>
+            
+            <!-- Date Filter Section -->
+            <div class="date-filter">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date">
+                <button onclick="applyDateFilter()">Apply Filter</button>
+               
+                <select id="sheet-dropdown" onchange="fetchDepotData()">
+                    <option value="select depo">SELECT DEPO</option>
+                    <option value="noida">DEPO NOIDA</option>
+                    <option value="ghaziabad">DEPO GHAZIABAD</option>
+                    <option value="pune">DEPO PUNE</option>
+                    <option value="patna">DEPO PATNA</option>
+                </select>
+            </div>
+
+            <!-- Stats  cards  -->
+            <div class="stats">
+                <div class="stat-card">
+                    <h2>Total Stock</h2>
+                    <p id="total-orders">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Dispatch</h2>
+                    <p id="total-qty-ordered">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Purchase</h2>
+                    <p id="total-dispatch">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const depotDataUrls = {
+            'noida': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+            'ghaziabad': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+            'pune': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+            'patna': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+        };
+
+        function fetchDepotData() {
+            const selectedDepot = document.getElementById("sheet-dropdown").value;
+            if (selectedDepot === "select depo") {
+                return; // No depot selected
+            }
+            
+            const url = depotDataUrls[selectedDepot];
+
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    parseCSVData(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching depot data:', error);
+                });
+        }
+
+        function parseCSVData(csvText) {
+            const rows = csvText.split("\n");
+            const headers = rows[0].split(",");
+            
+            let totalStock = 0;
+            let totalDispatch = 0;
+            let totalPurchase = 0;
+            
+            rows.slice(1).forEach(row => {
+                const columns = row.split(",");
+                if (columns.length < 3) return; // Skip invalid rows
+                totalStock += parseInt(columns[0] || 0);
+                totalDispatch += parseInt(columns[1] || 0);
+                totalPurchase += parseInt(columns[2] || 0);
+            });
+
+            // Update the stats cards
+            document.getElementById("total-orders").textContent = totalStock;
+            document.getElementById("total-qty-ordered").textContent = totalDispatch;
+            document.getElementById("total-dispatch").textContent = totalPurchase;
+        }
+    </script>
+</body>
+</html>

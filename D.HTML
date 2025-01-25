@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMBA LAMINATES</title>
+    <link rel="icon" href="images.jpg" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Section -->
+        <div class="sidebar">
+            <h2>AMBA LAMINATES DEPO'S PVT LTD.<BR><BR>( ALL SHEETS)</h2>
+            <ul>
+                <li><a href="#">SHEETS</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Dashboard Section -->
+        <div class="dashboard">
+            <h1 style="text-align: center;">AMBA LAMINATES DEPO'S PVT LTD.</h1>
+            
+            <!-- Date Filter Section -->
+            <div class="date-filter">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date">
+                <button onclick="applyDateFilter()">Apply Filter</button>
+               
+                <select id="sheet-dropdown" onchange="fetchDepotData()">
+                    <option value="select depo">SELECT DEPO</option>
+                    <option value="noida">DEPO NOIDA</option>
+                    <option value="ghaziabad">DEPO GHAZIABAD</option>
+                    <option value="pune">DEPO PUNE</option>
+                    <option value="patna">DEPO PATNA</option>
+                </select>
+            </div>
+
+            <!-- Stats cards -->
+            <div class="stats">
+                <div class="stat-card">
+                    <h2>Total Stock - NOIDA</h2>
+                    <p id="total-orders-noida">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Dispatch - NOIDA</h2>
+                    <p id="total-qty-ordered-noida">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Purchase - NOIDA</h2>
+                    <p id="total-dispatch-noida">Loading...</p>
+                </div>
+
+                <!-- Repeat for other depots -->
+                <div class="stat-card">
+                    <h2>Total Stock - GHAZIABAD</h2>
+                    <p id="total-orders-ghaziabad">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Dispatch - GHAZIABAD</h2>
+                    <p id="total-qty-ordered-ghaziabad">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Purchase - GHAZIABAD</h2>
+                    <p id="total-dispatch-ghaziabad">Loading...</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>Total Stock - PUNE</h2>
+                    <p id="total-orders-pune">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Dispatch - PUNE</h2>
+                    <p id="total-qty-ordered-pune">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Purchase - PUNE</h2>
+                    <p id="total-dispatch-pune">Loading...</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>Total Stock - PATNA</h2>
+                    <p id="total-orders-patna">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Dispatch - PATNA</h2>
+                    <p id="total-qty-ordered-patna">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Purchase - PATNA</h2>
+                    <p id="total-dispatch-patna">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URLs for each depot's CSV data
+        const depotDataUrls = {
+            'noida': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=0&single=true&output=csv&sheet=orders',
+            'ghaziabad': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+            'pune': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+            'patna': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+        };
+
+        // Function to apply date filters
+        function applyDateFilter() {
+            fetchDepotData();
+        }
+
+        // Fetch data for the selected depot and apply date filters
+        function fetchDepotData() {
+            const selectedDepot = document.getElementById("sheet-dropdown").value;
+            const startDate = document.getElementById("start-date").value;
+            const endDate = document.getElementById("end-date").value;
+
+            if (selectedDepot === "select depo") {
+                return; // Do nothing if no depot is selected
+            }
+
+            const url = depotDataUrls[selectedDepot];
+
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    parseCSVData(data, selectedDepot, startDate, endDate);
+                })
+                .catch(error => {
+                    console.error('Error fetching depot data:', error);
+                });
+        }
+
+        // Parse CSV data and filter by the selected date range
+        function parseCSVData(csvText, depot, startDate, endDate) {
+            const rows = csvText.split("\n");
+            const headers = rows[0].split(",");
+
+            let totalStock = 0;
+            let totalDispatch = 0;
+            let totalPurchase = 0;
+
+            rows.slice(1).forEach(row => {
+                const columns = row.split(",");
+                if (columns.length < 4) return; // Skip invalid rows
+                
+                const date = columns[0]; // Assuming the first column is the date
+                const stock = parseInt(columns[1] || 0);
+                const dispatch = parseInt(columns[2] || 0);
+                const purchase = parseInt(columns[3] || 0);
+
+                const rowDate = new Date(date);
+                const rowStartDate = new Date(startDate);
+                const rowEndDate = new Date(endDate);
+
+                // Check if rowDate is within the selected range
+                if ((startDate && rowDate < rowStartDate) || (endDate && rowDate > rowEndDate)) {
+                    return; // Skip rows outside the date range
+                }
+
+                totalStock += stock;
+                totalDispatch += dispatch;
+                totalPurchase += purchase;
+            });
+
+            // Update the stat cards based on depot
+            document.getElementById(`total-orders-${depot}`).textContent = totalStock;
+            document.getElementById(`total-qty-ordered-${depot}`).textContent = totalDispatch;
+            document.getElementById(`total-dispatch-${depot}`).textContent = totalPurchase;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMBA LAMINATES</title>
+    <link rel="icon" href="images.jpg" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Section -->
+        <div class="sidebar">
+            <h2>AMBA LAMINATES DEPO'S PVT LTD.<BR><BR>( ALL SHEETS)</h2>
+            <ul>
+                <li><a href="#">SHEETS</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Dashboard Section -->
+        <div class="dashboard">
+            <h1 style="text-align: center;">AMBA LAMINATES DEPO'S PVT LTD.</h1>
+            
+            <!-- Date Filter Section -->
+            <div class="date-filter">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date">
+                <button onclick="applyDateFilter()">Apply Filter</button>
+               
+                <select id="sheet-dropdown" onchange="fetchDepotData()">
+                    <option value="select depo">SELECT DEPO</option>
+                    <option value="noida">DEPO NOIDA</option>
+                    <option value="ghaziabad">DEPO GHAZIABAD</option>
+                    <option value="pune">DEPO PUNE</option>
+                    <option value="patna">DEPO PATNA</option>
+                </select>
+            </div>
+
+            <!-- Stats cards -->
+            <div class="stats">
+                <div class="stat-card">
+                    <h2>Total Stock</h2>
+                    <p id="total-stock">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Dispatch</h2>
+                    <p id="total-dispatch">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h2>Total Purchase</h2>
+                    <p id="total-purchase">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URLs for each depot's CSV data
+        const depotDataUrls = {
+            'noida': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=0&single=true&output=csv&sheet=orders',
+            'ghaziabad': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+            'pune': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+            'patna': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQak0bC7G45P5W4FdBy8iCg4dsQEC6tRrOdu09Vct0kDL2vDqFw6Wz_PuJlthZP0qXsdg91OdLS6rftz3xl_oYmMmfF7J4_cw/pub?output=csv',
+        };
+
+        // Function to apply date filters
+        function applyDateFilter() {
+            fetchDepotData();  // Re-fetch the data when date filter is applied
+        }
+
+        // Fetch data for the selected depot and apply date filters
+        function fetchDepotData() {
+            const selectedDepot = document.getElementById("sheet-dropdown").value;
+            const startDate = document.getElementById("start-date").value;
+            const endDate = document.getElementById("end-date").value;
+
+            if (selectedDepot === "select depo") {
+                return; // Do nothing if no depot is selected
+            }
+
+            const url = depotDataUrls[selectedDepot];
+
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    parseCSVData(data, selectedDepot, startDate, endDate);
+                })
+                .catch(error => {
+                    console.error('Error fetching depot data:', error);
+                });
+        }
+
+        // Parse CSV data and filter by the selected date range
+        function parseCSVData(csvText, depot, startDate, endDate) {
+            const rows = csvText.split("\n");
+            const headers = rows[0].split(",");
+
+            let totalStock = 0;
+            let totalDispatch = 0;
+            let totalPurchase = 0;
+
+            // Convert start and end date to Date objects if provided
+            const startDateObj = startDate ? new Date(startDate) : null;
+            const endDateObj = endDate ? new Date(endDate) : null;
+
+            rows.slice(1).forEach(row => {
+                const columns = row.split(",");
+                if (columns.length < 4) return; // Skip invalid rows
+
+                const date = columns[0]; // Assuming the first column is the date
+                const stock = parseInt(columns[1] || 0);
+                const dispatch = parseInt(columns[2] || 0);
+                const purchase = parseInt(columns[3] || 0);
+
+                // Convert the DD/MM/YY date format to MM/DD/YYYY
+                const rowDate = parseDate(date);
+
+                // Apply the date range filter
+                const isInRange =
+                    (!startDateObj || rowDate >= startDateObj) &&
+                    (!endDateObj || rowDate <= endDateObj);
+
+                if (isInRange) {
+                    totalStock += stock;
+                    totalDispatch += dispatch;
+                    totalPurchase += purchase;
+                }
+            });
+
+            // Update the stat cards based on depot
+            document.getElementById("total-stock").textContent = totalStock;
+            document.getElementById("total-dispatch").textContent = totalDispatch;
+            document.getElementById("total-purchase").textContent = totalPurchase;
+        }
+
+        // Function to parse DD/MM/YY to MM/DD/YYYY
+        function parseDate(dateStr) {
+            const dateParts = dateStr.split('/');
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1; // JavaScript months are 0-based
+            const year = parseInt(dateParts[2], 10);
+
+            // Handle the 2-digit year (e.g., 23 for 2023)
+            const fullYear = year < 100 ? 2000 + year : year; // Assuming 20th century for 2-digit years
+
+            // Return a Date object
+            return new Date(fullYear, month, day);
+        }
+    </script>
+
+  
