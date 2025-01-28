@@ -28,8 +28,7 @@
                 <label for="end-date">End Date:</label>
                 <input type="date" id="end-date">
                 <button onclick="applyDateFilter()">Apply Filter</button>
-                
-                <!-- Dropdown to select depot -->
+               
                 <select id="sheet-dropdown" onchange="fetchDepotData()">
                     <option value="select depo">SELECT DEPO</option>
                     <option value="noida">DEPO NOIDA</option>
@@ -61,22 +60,21 @@
         // URLs for each depot's sheets (stock, dispatch, and purchase)
         const depotDataUrls = {
             'noida': {
-                stock: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=18072645&single=true&output=csv&sheet=sheet8',
-                dispatch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=623094330&single=true&output=csv&sheet=sheet7',
+                stock: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=0&single=true&output=csv&sheet=stock',
+                dispatch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=1&single=true&output=csv&sheet=dispatch',
                 purchase: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=0&single=true&output=csv&sheet=orders'
-            }
-            // Add other depots similarly (ghaziabad, pune, etc.)
+            },
+            'ghaziabad': {
+                stock: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVvFtjgnm2hoAifaAxSmQeEgi2JBbVyfafZcgGA1AgGX04zOqoRM0ZDOjGdrDlLVkuPwDYMaGGY26i/pub?output=csv&sheet=stock',
+                dispatch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVvFtjgnm2hoAifaAxSmQeEgi2JBbVyfafZcgGA1AgGX04zOqoRM0ZDOjGdrDlLVkuPwDYMaGGY26i/pub?output=csv&sheet=dispatch',
+                purchase: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVvFtjgnm2hoAifaAxSmQeEgi2JBbVyfafZcgGA1AgGX04zOqoRM0ZDOjGdrDlLVkuPwDYMaGGY26i/pub?output=csv&sheet=purchase'
+            },
+            // Add other depots similarly (pune, patna, etc.)
         };
 
         // Function to apply date filters
         function applyDateFilter() {
             fetchDepotData();  // Re-fetch the data when date filter is applied
-        }
-
-        // Convert date string to Date object
-        function parseDate(dateStr) {
-            const [day, month, year] = dateStr.split('/');
-            return new Date(`${year}-${month}-${day}`);
         }
 
         // Fetch data for the selected depot and apply date filters
@@ -134,37 +132,35 @@
 
             rows.slice(1).forEach(row => {
                 const columns = row.split(",");
-                if (columns.length < 4) return; // Skip rows with invalid data
+                if (columns.length < 2) return; // Skip invalid rows
 
-                const date = columns[2]?.trim(); // Safely access date column and trim any extra spaces
-                const value = parseInt(columns[3] || 0); // Assuming the fourth column contains the quantity value
+                const date = columns[2].trim(); // Assuming the first column is the date
+                const value = parseInt(columns[3] || 0); // Assuming the second column contains the value
 
-                // Check if date exists
-                if (!date) {
-                    console.error("Missing date in row:", row); // Log rows with missing dates for debugging
-                    return; // Skip rows with no date
-                }
+                // Convert dd/mm/yy to Date object
+                const rowDate = convertToDate(date);
 
-                // Process date in DD/MM/YYYY format
-                const rowDate = parseDate(date); // Convert to Date object for comparison
+                // Convert start and end dates to Date objects
+                const rowStartDate = startDate ? new Date(startDate) : null;
+                const rowEndDate = endDate ? new Date(endDate) : null;
 
-                // Convert input start and end dates to Date objects
-                const rowStartDate = startDate ? parseDate(startDate) : null;
-                const rowEndDate = endDate ? parseDate(endDate) : null;
-
-                // Check if rowDate is within the selected range
-                if (
-                    (rowStartDate && rowDate < rowStartDate) ||
-                    (rowEndDate && rowDate > rowEndDate)
-                ) {
+                // Apply the date range filter
+                if ((startDate && rowDate < rowStartDate) || (endDate && rowDate > rowEndDate)) {
                     return; // Skip rows outside the date range
                 }
 
-                // Add the value to total
-                total += value;
+                total += value; // Add value to the total
             });
 
             return total;
+        }
+
+        // Convert dd/mm/yy format to Date object
+        function convertToDate(dateStr) {
+            const [day, month, year] = dateStr.split('/').map(num => parseInt(num, 10));
+            // Adjust year to full format (assuming 2000s)
+            const fullYear = year < 100 ? 2000 + year : year;
+            return new Date(fullYear, month - 1, day); // Month is 0-indexed in JS
         }
     </script>
 </body>

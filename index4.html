@@ -28,8 +28,7 @@
                 <label for="end-date">End Date:</label>
                 <input type="date" id="end-date">
                 <button onclick="applyDateFilter()">Apply Filter</button>
-                
-                <!-- Dropdown to select depot -->
+               
                 <select id="sheet-dropdown" onchange="fetchDepotData()">
                     <option value="select depo">SELECT DEPO</option>
                     <option value="noida">DEPO NOIDA</option>
@@ -58,25 +57,18 @@
     </div>
 
     <script>
-        // URLs for each depot's sheets (stock, dispatch, and purchase)
+        // Example data (URLs to fetch data for depots are commented)
         const depotDataUrls = {
             'noida': {
                 stock: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=18072645&single=true&output=csv&sheet=sheet8',
                 dispatch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=623094330&single=true&output=csv&sheet=sheet7',
                 purchase: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuFQgA8IkJFk4SXreMAjvy0ICZY3f1dYeiDIe5sxhp1EEaL5B-iSRzuzH-GSkBYclPapzOXIGyXKsc/pub?gid=0&single=true&output=csv&sheet=orders'
             }
-            // Add other depots similarly (ghaziabad, pune, etc.)
         };
 
         // Function to apply date filters
         function applyDateFilter() {
             fetchDepotData();  // Re-fetch the data when date filter is applied
-        }
-
-        // Convert date string to Date object
-        function parseDate(dateStr) {
-            const [day, month, year] = dateStr.split('/');
-            return new Date(`${year}-${month}-${day}`);
         }
 
         // Fetch data for the selected depot and apply date filters
@@ -145,26 +137,39 @@
                     return; // Skip rows with no date
                 }
 
-                // Process date in DD/MM/YYYY format
-                const rowDate = parseDate(date); // Convert to Date object for comparison
+                // Convert the date from DD/MM/YYYY format to a Date object
+                const rowDate = parseDate(date); 
 
                 // Convert input start and end dates to Date objects
                 const rowStartDate = startDate ? parseDate(startDate) : null;
                 const rowEndDate = endDate ? parseDate(endDate) : null;
 
-                // Check if rowDate is within the selected range
-                if (
-                    (rowStartDate && rowDate < rowStartDate) ||
-                    (rowEndDate && rowDate > rowEndDate)
-                ) {
-                    return; // Skip rows outside the date range
+                // Check if the row date is within the range (inclusive)
+                if (isDateInRange(rowDate, rowStartDate, rowEndDate)) {
+                    total += value; // Add the value to total if it's within the date range
                 }
-
-                // Add the value to total
-                total += value;
             });
 
             return total;
+        }
+
+        // Helper function to parse the date in DD/MM/YYYY format
+        function parseDate(dateStr) {
+            const [day, month, year] = dateStr.split("/"); // Use this only when the date format is DD/MM/YYYY
+            return new Date(`${year}-${month}-${day}`); // Convert to YYYY-MM-DD format
+        }
+
+        // Function to check if a date is within the range (inclusive)
+        function isDateInRange(rowDate, startDate, endDate) {
+            // Check if rowDate is in the range of start and end dates
+            if (startDate && endDate) {
+                return rowDate >= startDate && rowDate <= endDate;
+            } else if (startDate) {
+                return rowDate >= startDate; // If only start date is provided
+            } else if (endDate) {
+                return rowDate <= endDate; // If only end date is provided
+            }
+            return true; // No date filter applied
         }
     </script>
 </body>
